@@ -1,0 +1,28 @@
+{
+  "expo": {
+    "name": "NovaTech",
+    "slug": "novatech",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.novatech.app"
+    },
+    "android": {
+      "package": "com.novatech.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#667eea"
+      }
+    },
+    "web": {}
+  }
+}
