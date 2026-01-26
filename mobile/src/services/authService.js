@@ -87,5 +87,32 @@ export const authService = {
     } catch (error) {
       return error.response?.data || { success: false, message: 'Lỗi đổi mật khẩu' };
     }
+  },
+
+  forgotPassword: async (email) => {
+    try {
+      const response = await axios.post(`${API_URL}/forgot-password`, { email });
+      return { success: true, ...response.data };
+    } catch (error) {
+      return { success: false, message: error.response?.data?.message || 'Lỗi gửi mã xác thực' };
+    }
+  },
+
+  verifyResetCode: async (email, code) => {
+    try {
+      const response = await axios.post(`${API_URL}/verify-reset-code`, { email, code });
+      return { success: true, ...response.data };
+    } catch (error) {
+      return { success: false, message: error.response?.data?.message || 'Mã xác thực không hợp lệ' };
+    }
+  },
+
+  resetPassword: async (email, code, newPassword) => {
+    try {
+      const response = await axios.post(`${API_URL}/reset-password`, { email, code, newPassword });
+      return { success: true, ...response.data };
+    } catch (error) {
+      return { success: false, message: error.response?.data?.message || 'Lỗi đặt lại mật khẩu' };
+    }
   }
 };

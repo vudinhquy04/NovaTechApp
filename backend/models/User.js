@@ -22,6 +22,14 @@ const userSchema = new mongoose.Schema({
     required: [true, 'Name is required'],
     trim: true
   },
+  resetCode: {
+    type: String,
+    select: false
+  },
+  resetCodeExpiry: {
+    type: Date,
+    select: false
+  },
   createdAt: {
     type: Date,
     default: Date.now

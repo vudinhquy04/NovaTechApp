@@ -3,6 +3,7 @@ const router = express.Router();
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const { protect } = require('../middleware/auth');
+const { sendResetCodeEmail } = require('../utils/emailService');
 
 // Generate JWT Token
 const generateToken = (id) => {
@@ -93,6 +94,107 @@ router.get('/profile', protect, async (req, res) => {
     } else {
       res.status(404).json({ message: 'User not found' });
     }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// @route   POST /api/auth/forgot-password
+// @desc    Send reset code to email
+// @access  Public
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Generate 6-digit code
+    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const resetCodeExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    // Update only resetCode fields without triggering validation
+    await User.updateOne(
+      { _id: user._id },
+      { $set: { resetCode, resetCodeExpiry } }
+    );
+
+    // Send email with reset code
+    const emailResult = await sendResetCodeEmail(email, resetCode);
+    
+    if (!emailResult.success) {
+      // If email fails, still log to console as backup
+      console.log(`\n🔑 Reset Code for ${email}: ${resetCode}\n`);
+      console.log('⚠️ Email sending failed, but code is still valid');
+    } else {
+      console.log(`✅ Reset code sent to ${email}`);
+    }
+
+    res.json({ message: 'Reset code sent successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// @route   POST /api/auth/verify-reset-code
+// @desc    Verify reset code
+// @access  Public
+router.post('/verify-reset-code', async (req, res) => {
+  try {
+    const { email, code } = req.body;
+
+    const user = await User.findOne({ email }).select('+resetCode +resetCodeExpiry');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (!user.resetCode || !user.resetCodeExpiry) {
+      return res.status(400).json({ message: 'No reset code found' });
+    }
+
+    if (user.resetCodeExpiry < new Date()) {
+      return res.status(400).json({ message: 'Reset code has expired' });
+    }
+
+    if (user.resetCode !== code) {
+      return res.status(400).json({ message: 'Invalid reset code' });
+    }
+
+    res.json({ message: 'Code verified successfully', verified: true });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// @route   POST /api/auth/reset-password
+// @desc    Reset password with verified code
+// @access  Public
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { email, code, newPassword } = req.body;
+
+    const user = await User.findOne({ email }).select('+resetCode +resetCodeExpiry +password');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (!user.resetCode || user.resetCode !== code) {
+      return res.status(400).json({ message: 'Invalid reset code' });
+    }
+
+    if (user.resetCodeExpiry < new Date()) {
+      return res.status(400).json({ message: 'Reset code has expired' });
+    }
+
+    // Update password and clear reset fields
+    user.password = newPassword;
+    user.resetCode = undefined;
+    user.resetCodeExpiry = undefined;
+    await user.save({ validateBeforeSave: true });
+
+    res.json({ message: 'Password reset successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
