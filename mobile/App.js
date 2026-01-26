@@ -8,10 +8,6 @@ import ForgotPasswordScreen from './src/screens/ForgotPasswordScreen';
 import DashboardScreen from './src/screens/DashboardScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import ChangePasswordScreen from './src/screens/ChangePasswordScreen';
-import CancelOrderScreen from './src/screens/CancelOrderScreen';
-import OrderHistoryScreen from './src/screens/OrderHistoryScreen';
-import ProductReviewsScreen from './src/screens/ProductReviewsScreen';
-import WriteReviewScreen from './src/screens/WriteReviewScreen';
 
 const Stack = createStackNavigator();
 
@@ -44,10 +40,6 @@ export default function App() {
         <Stack.Screen name="Dashboard" component={DashboardScreen} />
         <Stack.Screen name="Profile" component={ProfileScreen} />
         <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
-        <Stack.Screen name="CancelOrder" component={CancelOrderScreen} />
-        <Stack.Screen name="OrderHistory" component={OrderHistoryScreen} />
-        <Stack.Screen name="ProductReviews" component={ProductReviewsScreen} />
-        <Stack.Screen name="WriteReview" component={WriteReviewScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
