@@ -6,7 +6,6 @@ const authRoutes = require('./routes/authRoutes');
 
 const app = express();
 
-// Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors({
@@ -14,7 +13,6 @@ app.use(cors({
   credentials: true
 }));
 
-// Kết nối MongoDB
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/novatech', {
   useNewUrlParser: true,
   useUnifiedTopology: true
@@ -26,20 +24,16 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/novatech'
   console.error('✗ Lỗi kết nối MongoDB:', err);
 });
 
-// Routes
 app.use('/api/auth', authRoutes);
 
-// Health check
 app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'OK', message: 'Backend is running' });
 });
 
-// 404 handler
 app.use((req, res) => {
   res.status(404).json({ success: false, message: 'Route không tìm thấy' });
 });
 
-// Error handler
 app.use((err, req, res, next) => {
   console.error('Lỗi:', err);
   res.status(500).json({ success: false, message: 'Lỗi server' });

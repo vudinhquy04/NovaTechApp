@@ -53,7 +53,6 @@ const userSchema = new mongoose.Schema({
   }
 });
 
-// Hash password trước khi lưu
 userSchema.pre('save', async function(next) {
   if (!this.isModified('password')) {
     return next();
@@ -68,12 +67,10 @@ userSchema.pre('save', async function(next) {
   }
 });
 
-// Phương thức so sánh mật khẩu
 userSchema.methods.matchPassword = async function(passwordToCheck) {
   return await bcryptjs.compare(passwordToCheck, this.password);
 };
 
-// Xóa password khi trả về user
 userSchema.methods.toJSON = function() {
   const obj = this.toObject();
   delete obj.password;

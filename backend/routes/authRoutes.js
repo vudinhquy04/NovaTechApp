@@ -3,12 +3,10 @@ const router = express.Router();
 const User = require('../models/User');
 const { generateToken } = require('../utils/tokenUtils');
 
-// Đăng ký người dùng
 router.post('/register', async (req, res) => {
   try {
     const { fullName, email, phone, password, passwordConfirm, address } = req.body;
 
-    // Kiểm tra dữ liệu đầu vào
     if (!fullName || !email || !phone || !password || !passwordConfirm) {
       return res.status(400).json({ 
         success: false, 
@@ -16,7 +14,6 @@ router.post('/register', async (req, res) => {
       });
     }
 
-    // Kiểm tra xác nhận mật khẩu
     if (password !== passwordConfirm) {
       return res.status(400).json({ 
         success: false, 
@@ -24,7 +21,6 @@ router.post('/register', async (req, res) => {
       });
     }
 
-    // Kiểm tra email đã tồn tại
     const existingEmail = await User.findOne({ email: email.toLowerCase() });
     if (existingEmail) {
       return res.status(400).json({ 
@@ -33,7 +29,6 @@ router.post('/register', async (req, res) => {
       });
     }
 
-    // Kiểm tra phone đã tồn tại
     const existingPhone = await User.findOne({ phone });
     if (existingPhone) {
       return res.status(400).json({ 
@@ -42,7 +37,6 @@ router.post('/register', async (req, res) => {
       });
     }
 
-    // Tạo người dùng mới
     const user = new User({
       fullName,
       email: email.toLowerCase(),
@@ -53,10 +47,8 @@ router.post('/register', async (req, res) => {
 
     await user.save();
 
-    // Tạo token
     const token = generateToken(user._id);
 
-    // Trả về thông tin user (không bao gồm password)
     res.status(201).json({
       success: true,
       message: 'Đăng ký thành công',
@@ -80,12 +72,10 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// Đăng nhập người dùng
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Kiểm tra dữ liệu đầu vào
     if (!email || !password) {
       return res.status(400).json({ 
         success: false, 
@@ -93,7 +83,6 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    // Tìm user và lấy password
     const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
 
     if (!user) {
@@ -103,7 +92,6 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    // Kiểm tra mật khẩu
     const isPasswordValid = await user.matchPassword(password);
 
     if (!isPasswordValid) {
@@ -113,7 +101,6 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    // Tạo token
     const token = generateToken(user._id);
 
     res.status(200).json({
@@ -139,7 +126,6 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// Lấy thông tin user hiện tại
 router.get('/me', require('../middleware/authMiddleware').authenticate, async (req, res) => {
   try {
     const user = await User.findById(req.userId);
@@ -173,7 +159,6 @@ router.get('/me', require('../middleware/authMiddleware').authenticate, async (r
   }
 });
 
-// Cập nhật thông tin user
 router.put('/update', require('../middleware/authMiddleware').authenticate, async (req, res) => {
   try {
     const { fullName, phone, address, avatar } = req.body;
@@ -216,7 +201,6 @@ router.put('/update', require('../middleware/authMiddleware').authenticate, asyn
   }
 });
 
-// Đổi mật khẩu
 router.post('/change-password', require('../middleware/authMiddleware').authenticate, async (req, res) => {
   try {
     const { currentPassword, newPassword, newPasswordConfirm } = req.body;
