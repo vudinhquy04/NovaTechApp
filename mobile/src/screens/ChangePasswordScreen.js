@@ -1,0 +1,167 @@
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  Alert,
+} from 'react-native';
+import { authService } from '../services/authService';
+
+const ChangePasswordScreen = ({ navigation }) => {
+  const [passwords, setPasswords] = useState({
+    currentPassword: '',
+    newPassword: '',
+    newPasswordConfirm: ''
+  });
+  const [loading, setLoading] = useState(false);
+
+  const handleChange = (name, value) => {
+    setPasswords(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = async () => {
+    if (!passwords.currentPassword || !passwords.newPassword || !passwords.newPasswordConfirm) {
+      Alert.alert('Lỗi', 'Vui lòng điền đầy đủ thông tin');
+      return;
+    }
+
+    if (passwords.newPassword !== passwords.newPasswordConfirm) {
+      Alert.alert('Lỗi', 'Mật khẩu mới không khớp');
+      return;
+    }
+
+    setLoading(true);
+    const result = await authService.changePassword(passwords);
+
+    if (result.success) {
+      Alert.alert('Thành công', 'Đổi mật khẩu thành công');
+      navigation.replace('Dashboard');
+    } else {
+      Alert.alert('Lỗi', result.message || 'Đổi mật khẩu thất bại');
+    }
+
+    setLoading(false);
+  };
+
+  return (
+    <ScrollView style={styles.container}>
+      <View style={styles.formContainer}>
+        <Text style={styles.title}>Đổi Mật Khẩu</Text>
+
+        <TextInput
+          style={styles.input}
+          placeholder="Mật Khẩu Hiện Tại"
+          value={passwords.currentPassword}
+          onChangeText={(value) => handleChange('currentPassword', value)}
+          secureTextEntry
+          placeholderTextColor="#999"
+        />
+
+        <TextInput
+          style={styles.input}
+          placeholder="Mật Khẩu Mới"
+          value={passwords.newPassword}
+          onChangeText={(value) => handleChange('newPassword', value)}
+          secureTextEntry
+          placeholderTextColor="#999"
+        />
+
+        <TextInput
+          style={styles.input}
+          placeholder="Xác Nhận Mật Khẩu Mới"
+          value={passwords.newPasswordConfirm}
+          onChangeText={(value) => handleChange('newPasswordConfirm', value)}
+          secureTextEntry
+          placeholderTextColor="#999"
+        />
+
+        <TouchableOpacity
+          style={[styles.button, loading && styles.buttonDisabled]}
+          onPress={handleSubmit}
+          disabled={loading}
+        >
+          <Text style={styles.buttonText}>
+            {loading ? 'Đang xử lý...' : 'Đổi Mật Khẩu'}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.navigate('Dashboard')}
+        >
+          <Text style={styles.backButtonText}>Quay Lại</Text>
+        </TouchableOpacity>
+      </View>
+    </ScrollView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#667eea',
+  },
+  formContainer: {
+    padding: 20,
+    marginTop: 50,
+    backgroundColor: 'white',
+    borderRadius: 10,
+    margin: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 20,
+    color: '#333',
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    padding: 15,
+    marginBottom: 15,
+    borderRadius: 8,
+    fontSize: 16,
+    color: '#333',
+  },
+  button: {
+    backgroundColor: '#667eea',
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  backButton: {
+    backgroundColor: '#f0f0f0',
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  backButtonText: {
+    color: '#333',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+});
+
+export default ChangePasswordScreen;
