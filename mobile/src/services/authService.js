@@ -1,19 +1,29 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_URL = 'http://10.24.22.142:5001/api/auth';
+const API_URL = 'http://192.168.0.102:5000/api/auth';
 
 export const authService = {
   register: async (userData) => {
     try {
-      const response = await axios.post(`${API_URL}/register`, userData);
+      // Map fullName to name for backend
+      const registerData = {
+        name: userData.fullName,
+        email: userData.email,
+        password: userData.password
+      };
+      
+      const response = await axios.post(`${API_URL}/register`, registerData);
       if (response.data.token) {
         await AsyncStorage.setItem('token', response.data.token);
-        await AsyncStorage.setItem('user', JSON.stringify(response.data.user));
+        await AsyncStorage.setItem('user', JSON.stringify({
+          ...response.data,
+          fullName: response.data.name
+        }));
       }
-      return response.data;
+      return { success: true, ...response.data };
     } catch (error) {
-      return error.response?.data || { success: false, message: 'Lỗi kết nối' };
+      return { success: false, message: error.response?.data?.message || 'Lỗi kết nối' };
     }
   },
 
@@ -22,11 +32,14 @@ export const authService = {
       const response = await axios.post(`${API_URL}/login`, { email, password });
       if (response.data.token) {
         await AsyncStorage.setItem('token', response.data.token);
-        await AsyncStorage.setItem('user', JSON.stringify(response.data.user));
+        await AsyncStorage.setItem('user', JSON.stringify({
+          ...response.data,
+          fullName: response.data.name
+        }));
       }
-      return response.data;
+      return { success: true, ...response.data };
     } catch (error) {
-      return error.response?.data || { success: false, message: 'Lỗi kết nối' };
+      return { success: false, message: error.response?.data?.message || 'Lỗi kết nối' };
     }
   },
 
@@ -35,10 +48,10 @@ export const authService = {
       const token = await AsyncStorage.getItem('token');
       if (!token) return null;
 
-      const response = await axios.get(`${API_URL}/me`, {
+      const response = await axios.get(`${API_URL}/profile`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      return response.data.user;
+      return response.data;
     } catch (error) {
       return null;
     }
