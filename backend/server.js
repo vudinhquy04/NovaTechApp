@@ -17,7 +17,10 @@ app.get('/', (req, res) => {
 
 // Routes
 const authRoutes = require('./routes/authRoutes');
+const productRoutes = require('./routes/productRoutes');
+
 app.use('/api/auth', authRoutes);
+app.use('/api/products', productRoutes);
 
 // MongoDB connection
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/novatech';
