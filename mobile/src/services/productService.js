@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://192.168.0.102:5000/api/products';
+const API_URL = 'http://10.0.2.2:5000/api/products';
 
 const productService = {
   // Get all products with filters
