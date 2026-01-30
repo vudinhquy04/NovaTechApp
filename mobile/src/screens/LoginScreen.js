@@ -30,7 +30,7 @@ const LoginScreen = ({ navigation }) => {
     const result = await authService.login(email, password);
 
     if (result.success) {
-      navigation.replace('Dashboard');
+      navigation.replace('DetailProduct');
     } else {
       Alert.alert('Lỗi Đăng Nhập', result.message || 'Đăng nhập thất bại');
     }

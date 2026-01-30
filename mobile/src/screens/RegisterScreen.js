@@ -48,7 +48,7 @@ const RegisterScreen = ({ navigation }) => {
     const result = await authService.register(formData);
 
     if (result.success) {
-      navigation.replace('Dashboard');
+      navigation.replace('DetailProduct');
     } else {
       Alert.alert('Lỗi Đăng Ký', result.message || 'Đăng ký thất bại');
     }

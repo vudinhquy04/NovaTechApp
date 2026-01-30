@@ -8,6 +8,7 @@ import ForgotPasswordScreen from './src/screens/ForgotPasswordScreen';
 import DashboardScreen from './src/screens/DashboardScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import ChangePasswordScreen from './src/screens/ChangePasswordScreen';
+import DetailProduct from './src/screens/DetailProduct';
 
 const Stack = createStackNavigator();
 
@@ -16,8 +17,8 @@ export default function App() {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const token = await AsyncStorage.getItem('token');
-      setInitialRoute(token ? 'Dashboard' : 'Login');
+      // Start app directly at DetailProduct
+      setInitialRoute('DetailProduct');
     };
     checkAuth();
   }, []);
@@ -38,6 +39,7 @@ export default function App() {
         <Stack.Screen name="Register" component={RegisterScreen} />
         <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
         <Stack.Screen name="Dashboard" component={DashboardScreen} />
+        <Stack.Screen name="DetailProduct" component={DetailProduct} />
         <Stack.Screen name="Profile" component={ProfileScreen} />
         <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
       </Stack.Navigator>
