@@ -75,7 +75,15 @@ export default function HomeScreen({ navigation }) {
   };
 
   const renderProductItem = ({ item }) => (
-    <TouchableOpacity style={styles.productCard} activeOpacity={0.7}>
+    <TouchableOpacity
+      style={styles.productCard}
+      activeOpacity={0.7}
+      onPress={() =>
+        navigation.navigate("ProductDetail", {
+          productId: item._id,
+        })
+      }
+    >
       {item.discount > 0 && (
         <View style={styles.discountBadge}>
           <Text style={styles.discountText}>-{item.discount}%</Text>

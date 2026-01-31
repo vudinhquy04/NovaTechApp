@@ -166,5 +166,25 @@ router.get('/categories/all', async (req, res) => {
     });
   }
 });
+// GET /products/related
+router.get("/related", async (req, res) => {
+  try {
+    const { category, excludeId, limit = 4 } = req.query;
 
+    const products = await Product.find({
+      category,
+      _id: { $ne: excludeId },
+    }).limit(Number(limit));
+
+    res.json({
+      success: true,
+      data: products,
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "Lỗi lấy sản phẩm liên quan",
+    });
+  }
+});
 module.exports = router;
