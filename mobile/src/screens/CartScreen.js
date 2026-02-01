@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -9,54 +9,64 @@ import {
   TextInput,
   Alert,
 } from "react-native";
-
-import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-const cartData = [
-  {
-    id: "1",
-    name: "Laptop Gaming ROG",
-    color: "Eclipse Gray",
-    price: 28500000,
-    quantity: 1,
-    image: require("../../assets/images/logo.png"),
-    checked: true,
-  },
-  {
-    id: "2",
-    name: "Tai nghe Sony WH-1000XM5",
-    color: "Silver Platinum",
-    price: 6900000,
-    quantity: 2,
-    image: require("../../assets/images/logo.png"),
-    checked: true,
-  },
-  {
-    id: "3",
-    name: "Bàn phím Keychron K6",
-    color: "Switch Blue",
-    price: 1850000,
-    quantity: 1,
-    image: require("../../assets/images/logo.png"),
-    checked: false,
-  },
-];
+import { Ionicons } from "@expo/vector-icons";
 
 const CartScreen = ({ navigation }) => {
-  const renderItem = ({ item }) => (
-    <View style={styles.item}>
-      <Ionicons
-        name={item.checked ? "checkbox" : "square-outline"}
-        size={22}
-        color="#ff7a00"
-      />
+  const [cart, setCart] = useState([]);
 
-      <Image source={item.image} style={styles.image} />
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("focus", () => {
+      loadCart();
+    });
+    return unsubscribe;
+  }, [navigation]);
+
+  const loadCart = async () => {
+  const data = await AsyncStorage.getItem("cart");
+  let cartData = data ? JSON.parse(data) : [];
+
+  // 🔒 LỌC ITEM LỖI (id undefined)
+  cartData = cartData.filter(item => item && item.id);
+
+  setCart(cartData);
+};
+
+
+  const removeItem = (id) => {
+    Alert.alert("Xác nhận", "Bạn có muốn xóa sản phẩm này?", [
+      { text: "Hủy", style: "cancel" },
+      {
+        text: "Xóa",
+        style: "destructive",
+        onPress: async () => {
+          const newCart = cart.filter((item) => item.id !== id);
+          setCart(newCart);
+          await AsyncStorage.setItem("cart", JSON.stringify(newCart));
+        },
+      },
+    ]);
+  };
+
+  const totalPrice = cart.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0
+  );
+
+  const renderItem = ({ item }) => (
+    <TouchableOpacity
+      style={styles.item}
+      onPress={() =>
+        navigation.navigate("OrderDetail", {
+          order: item,
+        })
+      }
+    >
+      <Image source={{ uri: item.image }} style={styles.image} />
 
       <View style={styles.info}>
         <Text style={styles.name}>{item.name}</Text>
-        <Text style={styles.sub}>Màu: {item.color}</Text>
 
         <View style={styles.priceRow}>
           <Text style={styles.price}>
@@ -64,10 +74,24 @@ const CartScreen = ({ navigation }) => {
           </Text>
           <Text style={styles.qty}>SL: {item.quantity}</Text>
         </View>
-      </View>
 
-      <Ionicons name="trash-outline" size={20} color="#999" />
-    </View>
+        <View style={styles.actionRow}>
+          <TouchableOpacity
+            onPress={() =>
+              navigation.navigate("ProductDetail", {
+                productId: item.id,
+              })
+            }
+          >
+            <Text style={styles.edit}>Sửa</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={() => removeItem(item.id)}>
+            <Text style={styles.delete}>Xóa</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </TouchableOpacity>
   );
 
   return (
@@ -77,9 +101,7 @@ const CartScreen = ({ navigation }) => {
         <View style={styles.header}>
           <Text style={styles.title}>Giỏ hàng</Text>
 
-          <TouchableOpacity
-            onPress={() => navigation.navigate("Home")}
-          >
+          <TouchableOpacity onPress={() => navigation.navigate("Home")}>
             <Ionicons name="home-outline" size={24} />
           </TouchableOpacity>
         </View>
@@ -95,41 +117,32 @@ const CartScreen = ({ navigation }) => {
 
         {/* LIST */}
         <FlatList
-          data={cartData}
+          data={cart}
           renderItem={renderItem}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => item.id.toString()}
           showsVerticalScrollIndicator={false}
-        />
-
-        {/* VOUCHER */}
-        <View style={styles.voucher}>
-          <TextInput
-            placeholder="Nhập mã giảm giá"
-            style={styles.voucherInput}
-          />
-          <TouchableOpacity
-            style={styles.voucherBtn}
-            onPress={() =>
-              Alert.alert(
-                "Thông báo",
-                "Tính năng chưa được phát triển"
-              )
-            }
-          >
-            <Text style={{ color: "#fff", fontWeight: "600" }}>
-              Áp dụng
+          ListEmptyComponent={
+            <Text style={{ textAlign: "center", marginTop: 30 }}>
+              Giỏ hàng trống
             </Text>
-          </TouchableOpacity>
-        </View>
+          }
+        />
 
         {/* FOOTER */}
         <View style={styles.footer}>
           <View>
             <Text style={styles.totalLabel}>Tổng thanh toán</Text>
-            <Text style={styles.total}>35.400.000đ</Text>
+            <Text style={styles.total}>
+              {totalPrice.toLocaleString()}đ
+            </Text>
           </View>
 
-          <TouchableOpacity style={styles.payBtn}>
+          <TouchableOpacity
+            style={styles.payBtn}
+            onPress={() =>
+              Alert.alert("Thông báo", "Chức năng thanh toán chưa hỗ trợ")
+            }
+          >
             <Text style={styles.payText}>Thanh toán →</Text>
           </TouchableOpacity>
         </View>
@@ -236,6 +249,20 @@ const styles = StyleSheet.create({
   totalLabel: {
     color: "#777",
   },
+  actionRow: {
+    flexDirection: "row",
+    marginTop: 6,
+  },
+  edit: {
+    color: "#ff7a00",
+    marginRight: 20,
+    fontWeight: "600",
+  },
+  delete: {
+    color: "red",
+    fontWeight: "600",
+  },
+
   total: {
     color: "#ff7a00",
     fontSize: 18,

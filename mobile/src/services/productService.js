@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://192.168.1.10:5000/api/products';
+const API_URL = 'http://10.24.11.38:5000/api/products';
 
 const productService = {
   // Get all products with filters
@@ -56,7 +56,23 @@ const productService = {
       console.error('Error fetching categories:', error);
       throw error;
     }
+  },
+  // Get related products
+  getRelatedProducts: async (category, excludeId, limit = 4) => {
+  try {
+    const response = await axios.get(`${API_URL}/related`, {
+      params: {
+        category,
+        excludeId,
+        limit,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching related products:', error);
+    throw error;
   }
-};
+ },
+} ;
 
 export default productService;
