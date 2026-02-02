@@ -16,6 +16,7 @@ import { Ionicons } from "@expo/vector-icons";
 const CartScreen = ({ navigation }) => {
   const [cart, setCart] = useState([]);
 
+  // 🔥 LOAD LẠI MỖI KHI QUAY VỀ
   useEffect(() => {
     const unsubscribe = navigation.addListener("focus", () => {
       loadCart();
@@ -24,15 +25,11 @@ const CartScreen = ({ navigation }) => {
   }, [navigation]);
 
   const loadCart = async () => {
-  const data = await AsyncStorage.getItem("cart");
-  let cartData = data ? JSON.parse(data) : [];
-
-  // 🔒 LỌC ITEM LỖI (id undefined)
-  cartData = cartData.filter(item => item && item.id);
-
-  setCart(cartData);
-};
-
+    const data = await AsyncStorage.getItem("cart");
+    let cartData = data ? JSON.parse(data) : [];
+    cartData = cartData.filter((item) => item && item.id);
+    setCart(cartData);
+  };
 
   const removeItem = (id) => {
     Alert.alert("Xác nhận", "Bạn có muốn xóa sản phẩm này?", [
@@ -51,27 +48,22 @@ const CartScreen = ({ navigation }) => {
 
   const totalPrice = cart.reduce(
     (sum, item) => sum + item.price * item.quantity,
-    0
+    0,
   );
 
   const renderItem = ({ item }) => (
-    <TouchableOpacity
-      style={styles.item}
-      onPress={() =>
-        navigation.navigate("OrderDetail", {
-          order: item,
-        })
-      }
-    >
-      <Image source={{ uri: item.image }} style={styles.image} />
+    <View style={styles.item}>
+      <TouchableOpacity
+        onPress={() => navigation.navigate("OrderDetail", { order: item })}
+      >
+        <Image source={{ uri: item.image }} style={styles.image} />
+      </TouchableOpacity>
 
       <View style={styles.info}>
         <Text style={styles.name}>{item.name}</Text>
 
         <View style={styles.priceRow}>
-          <Text style={styles.price}>
-            {item.price.toLocaleString()}đ
-          </Text>
+          <Text style={styles.price}>{item.price.toLocaleString()}đ</Text>
           <Text style={styles.qty}>SL: {item.quantity}</Text>
         </View>
 
@@ -79,7 +71,9 @@ const CartScreen = ({ navigation }) => {
           <TouchableOpacity
             onPress={() =>
               navigation.navigate("ProductDetail", {
-                productId: item.id,
+                productId: item.id, // 🔥 PHẢI LÀ _id gốc
+                isEdit: true,
+                cartQuantity: item.quantity,
               })
             }
           >
@@ -91,36 +85,28 @@ const CartScreen = ({ navigation }) => {
           </TouchableOpacity>
         </View>
       </View>
-    </TouchableOpacity>
+    </View>
   );
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        {/* HEADER */}
         <View style={styles.header}>
           <Text style={styles.title}>Giỏ hàng</Text>
-
           <TouchableOpacity onPress={() => navigation.navigate("Home")}>
             <Ionicons name="home-outline" size={24} />
           </TouchableOpacity>
         </View>
 
-        {/* SEARCH */}
         <View style={styles.searchBox}>
           <Ionicons name="search-outline" size={18} color="#999" />
-          <TextInput
-            placeholder="Tìm sản phẩm trong giỏ..."
-            style={styles.searchInput}
-          />
+          <TextInput placeholder="Tìm sản phẩm..." style={styles.searchInput} />
         </View>
 
-        {/* LIST */}
         <FlatList
           data={cart}
           renderItem={renderItem}
           keyExtractor={(item) => item.id.toString()}
-          showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             <Text style={{ textAlign: "center", marginTop: 30 }}>
               Giỏ hàng trống
@@ -128,20 +114,15 @@ const CartScreen = ({ navigation }) => {
           }
         />
 
-        {/* FOOTER */}
         <View style={styles.footer}>
           <View>
             <Text style={styles.totalLabel}>Tổng thanh toán</Text>
-            <Text style={styles.total}>
-              {totalPrice.toLocaleString()}đ
-            </Text>
+            <Text style={styles.total}>{totalPrice.toLocaleString()}đ</Text>
           </View>
 
           <TouchableOpacity
             style={styles.payBtn}
-            onPress={() =>
-              Alert.alert("Thông báo", "Chức năng thanh toán chưa hỗ trợ")
-            }
+            onPress={() => Alert.alert("Thông báo", "Chưa hỗ trợ thanh toán")}
           >
             <Text style={styles.payText}>Thanh toán →</Text>
           </TouchableOpacity>

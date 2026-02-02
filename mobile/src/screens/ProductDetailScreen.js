@@ -14,16 +14,22 @@ import { Ionicons } from "@expo/vector-icons";
 import productService from "../services/productService";
 
 export default function ProductDetailScreen({ route, navigation }) {
-  const { productId } = route.params;
-
+  const { productId, isEdit, cartQuantity } = route.params;
   const [product, setProduct] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-
+  
   useEffect(() => {
-    loadProductDetail();
-  }, []);
+  if (!productId) {
+    Alert.alert("Lỗi", "Không tìm thấy sản phẩm");
+    navigation.goBack();
+    return;
+  }
+
+  loadProductDetail();
+}, [productId]);
+
 
   const loadProductDetail = async () => {
     try {
@@ -66,25 +72,46 @@ export default function ProductDetailScreen({ route, navigation }) {
   };
 
   const handleAddToCart = async () => {
-  if (!product) {
-    Alert.alert("Lỗi", "Sản phẩm chưa sẵn sàng");
-    return;
-  }
+  if (!product) return;
 
   try {
     const cartData = await AsyncStorage.getItem("cart");
     let cart = cartData ? JSON.parse(cartData) : [];
 
-    // 🔑 FIX QUAN TRỌNG: dùng _id
-    const productId = product._id;
+    const index = cart.findIndex(item => item.id === product._id);
 
-    const index = cart.findIndex(item => item.id === productId);
+    // 👉 TRƯỜNG HỢP SỬA
+    if (isEdit && index !== -1) {
+      Alert.alert(
+        "Xác nhận",
+        "Bạn có chắc chắn muốn cập nhật số lượng sản phẩm này?",
+        [
+          { text: "Hủy", style: "cancel" },
+          {
+            text: "Đồng ý",
+            onPress: async () => {
+              cart[index].quantity = quantity;
+              await AsyncStorage.setItem("cart", JSON.stringify(cart));
 
+              Alert.alert("Thành công 🎉", "Đã cập nhật giỏ hàng", [
+                {
+                  text: "OK",
+                  onPress: () => navigation.goBack(),
+                },
+              ]);
+            },
+          },
+        ]
+      );
+      return;
+    }
+
+    // 👉 TRƯỜNG HỢP THÊM MỚI
     if (index !== -1) {
       cart[index].quantity += quantity;
     } else {
       cart.push({
-        id: productId,          // ⭐ BẮT BUỘC
+        id: product._id,
         name: product.name,
         price: product.price,
         image: product.image,
@@ -93,13 +120,12 @@ export default function ProductDetailScreen({ route, navigation }) {
     }
 
     await AsyncStorage.setItem("cart", JSON.stringify(cart));
-
-    Alert.alert("Thành công 🎉", `Đã thêm ${quantity} sản phẩm vào giỏ hàng`);
+    Alert.alert("Thành công 🎉", "Đã thêm vào giỏ hàng");
   } catch (error) {
-    console.log("ADD CART ERROR:", error);
-    Alert.alert("Lỗi", "Thêm vào giỏ hàng thất bại");
+    Alert.alert("Lỗi", "Không thể cập nhật giỏ hàng");
   }
 };
+
 
 
 
