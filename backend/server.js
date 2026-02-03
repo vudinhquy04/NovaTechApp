@@ -17,7 +17,10 @@ app.get('/', (req, res) => {
 
 // Routes
 const authRoutes = require('./routes/authRoutes');
+const productRoutes = require('./routes/productRoutes');
+
 app.use('/api/auth', authRoutes);
+app.use('/api/products', productRoutes);
 
 // MongoDB connection
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/novatech';
@@ -36,7 +39,7 @@ const HOST = '0.0.0.0'; // Listen on all network interfaces
 app.listen(PORT, HOST, () => {
   console.log(`Server is running on http://${HOST}:${PORT}`);
   console.log(`Local: http://localhost:${PORT}`);
-  console.log(`Network: http://192.168.0.102:${PORT}`);
+  console.log(`Network: http://10.24.29.195:${PORT}`);
 });
 
 module.exports = app;
