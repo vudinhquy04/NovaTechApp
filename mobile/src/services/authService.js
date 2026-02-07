@@ -1,11 +1,7 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-<<<<<<< HEAD
-const API_URL = 'http://10.24.26.200:5000/api/auth';
-=======
 const API_URL = 'http://192.168.0.100:5000/api/auth';
->>>>>>> origin/long
 
 export const authService = {
   register: async (userData) => {
