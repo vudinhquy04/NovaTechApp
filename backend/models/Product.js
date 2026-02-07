@@ -8,10 +8,25 @@ const productSchema = new mongoose.Schema({
   },
   description: {
     type: String,
-    trim: true
+    default: ''
   },
   price: {
     type: Number,
+    required: true,
+    min: 0
+  },
+  originalPrice: {
+    type: Number,
+    default: 0
+  },
+  discount: {
+    type: Number,
+    default: 0,
+    min: 0,
+    max: 100
+  },
+  image: {
+    type: String,
     required: true
   },
   images: [{
@@ -19,38 +34,52 @@ const productSchema = new mongoose.Schema({
   }],
   category: {
     type: String,
-    trim: true
+    enum: ['laptop', 'phone', 'accessory', 'tablet', 'watch', 'audio', 'other'],
+    default: 'other'
   },
-  averageRating: {
+  brand: {
+    type: String,
+    default: ''
+  },
+  specifications: {
+    type: Object,
+    default: {}
+  },
+  stock: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  sold: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  rating: {
     type: Number,
     default: 0,
     min: 0,
     max: 5
   },
-  totalReviews: {
+  reviewCount: {
     type: Number,
-    default: 0
+    default: 0,
+    min: 0
   },
-  ratingDistribution: {
-    '5': { type: Number, default: 0 },
-    '4': { type: Number, default: 0 },
-    '3': { type: Number, default: 0 },
-    '2': { type: Number, default: 0 },
-    '1': { type: Number, default: 0 }
+  isHot: {
+    type: Boolean,
+    default: false
   },
-  createdAt: {
-    type: Date,
-    default: Date.now
+  isFeatured: {
+    type: Boolean,
+    default: false
   },
-  updatedAt: {
-    type: Date,
-    default: Date.now
+  isActive: {
+    type: Boolean,
+    default: true
   }
-});
-
-productSchema.pre('save', function(next) {
-  this.updatedAt = Date.now();
-  next();
+}, {
+  timestamps: true
 });
 
 module.exports = mongoose.model('Product', productSchema);
