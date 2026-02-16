@@ -1,0 +1,142 @@
+.users-container {
+  padding: 0 30px 30px;
+}
+
+.users-header {
+  margin-bottom: 24px;
+}
+
+.users-header h3 {
+  font-size: 16px;
+  color: #6b7280;
+  font-weight: 400;
+  margin: 0;
+}
+
+.users-table .user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: white;
+  font-size: 16px;
+}
+
+.user-name {
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 4px;
+}
+
+.user-id {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.contact-info div {
+  margin-bottom: 4px;
+  font-size: 13px;
+  color: #374151;
+}
+
+.role-badge {
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: inline-block;
+}
+
+.role-badge.admin {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.role-badge.staff {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
+.search-input-full {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+.filter-select {
+  padding: 10px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  background: white;
+  cursor: pointer;
+}
+
+.btn-refresh, .btn-export {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-refresh {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.btn-export {
+  background: #10b981;
+  color: white;
+}
+
+.btn-action.lock {
+  background: #fef3c7;
+}
+
+.btn-action.lock:hover {
+  background: #fde047;
+}
+
+.users-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.users-table thead {
+  background: #f9fafb;
+}
+
+.users-table th {
+  padding: 16px 24px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.users-table td {
+  padding: 16px 24px;
+  border-top: 1px solid #e5e7eb;
+  font-size: 14px;
+  color: #374151;
+}
