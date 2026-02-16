@@ -22,6 +22,19 @@ const userSchema = new mongoose.Schema({
     required: [true, 'Name is required'],
     trim: true
   },
+  isActive: {
+    type: Boolean,
+    default: true
+  },
+  role: {
+    type: String,
+    enum: ['user', 'admin', 'staff'],
+    default: 'user'
+  },
+  phone: {
+    type: String,
+    trim: true
+  },
   resetCode: {
     type: String,
     select: false
@@ -36,7 +49,6 @@ const userSchema = new mongoose.Schema({
   }
 });
 
-// Hash password before saving
 userSchema.pre('save', async function(next) {
   if (!this.isModified('password')) {
     return next();
@@ -47,7 +59,6 @@ userSchema.pre('save', async function(next) {
   next();
 });
 
-// Method to compare password
 userSchema.methods.comparePassword = async function(candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };

@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const Product = require('./models/Product');
 const Category = require('./models/Category');
+const User = require('./models/User');
 require('dotenv').config();
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/novatech';
@@ -621,20 +622,65 @@ async function seedDatabase() {
     await mongoose.connect(MONGODB_URI);
     console.log('Connected to MongoDB');
 
-    // Clear existing data
     await Product.deleteMany({});
     await Category.deleteMany({});
+    await User.deleteMany({});
     console.log('Cleared existing data');
 
-    // Insert categories
+    const adminUser = await User.create({
+      email: 'admin@novatech.com',
+      password: 'admin123',
+      name: 'Super Admin',
+      role: 'admin',
+      isActive: true,
+      phone: '0912345678'
+    });
+    console.log('Admin user created:', adminUser.email);
+
+    const sampleUsers = [
+      {
+        email: 'user1@example.com',
+        password: 'user123',
+        name: 'Nguyễn Văn An',
+        role: 'user',
+        isActive: true,
+        phone: '0912345678'
+      },
+      {
+        email: 'staff1@novatech.com',
+        password: 'staff123',
+        name: 'Trần Thị Bích',
+        role: 'staff',
+        isActive: false,
+        phone: '0988777666'
+      },
+      {
+        email: 'user2@example.com',
+        password: 'user123',
+        name: 'Lê Hoàng Nam',
+        role: 'user',
+        isActive: true,
+        phone: '0905123987'
+      },
+      {
+        email: 'staff2@novatech.com',
+        password: 'staff123',
+        name: 'Phạm Minh Hương',
+        role: 'staff',
+        isActive: true,
+        phone: '0977111222'
+      }
+    ];
+    await User.insertMany(sampleUsers);
+    console.log('Sample users created');
+
     await Category.insertMany(categories);
     console.log('Categories seeded successfully');
 
-    // Insert products
     await Product.insertMany(products);
     console.log('Products seeded successfully');
 
-    console.log(`✅ Seeded ${categories.length} categories and ${products.length} products`);
+    console.log(`✅ Seeded ${categories.length} categories, ${products.length} products, and ${sampleUsers.length + 1} users`);
 
     await mongoose.disconnect();
     console.log('Disconnected from MongoDB');
