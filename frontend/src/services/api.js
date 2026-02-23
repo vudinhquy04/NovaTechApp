@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://192.168.1.18:5000/api';
+const API_URL = 'http://172.20.10.2:5000/api';
 
 export const ADMIN_CREDENTIALS = {
   email: 'admin@novatech.com',
@@ -64,6 +64,10 @@ export const userAPI = {
     const response = await api.get(`/auth/users/${id}`);
     return response.data;
   },
+  create: async (data) => {
+    const response = await api.post('/auth/users', data);
+    return response.data;
+  },
   update: async (id, data) => {
     const response = await api.put(`/auth/users/${id}`, data);
     return response.data;
@@ -75,39 +79,32 @@ export const userAPI = {
 };
 
 export const orderAPI = {
+  getAll: async (params) => {
+    const response = await api.get('/orders', { params });
+    return response.data;
+  },
+  getById: async (id) => {
+    const response = await api.get(`/orders/${id}`);
+    return response.data;
+  },
+  updateStatus: async (id, status) => {
+    const response = await api.put(`/orders/${id}/status`, { status });
+    return response.data;
+  },
+  cancel: async (id, reason) => {
+    const response = await api.put(`/orders/${id}/cancel`, { reason });
+    return response.data;
+  },
+  getStats: async () => {
+    const response = await api.get('/orders/stats/summary');
+    return response.data;
+  }
+};
+
+export const categoryAPI = {
   getAll: async () => {
-    return {
-      orders: [
-        {
-          _id: 'ORD-20230501',
-          customer: { name: 'Nguyễn Văn An', email: 'an.nguyen@company.com' },
-          total: 1250000,
-          status: 'pending',
-          createdAt: '2023-12-10T14:30:00.000Z'
-        },
-        {
-          _id: 'ORD-20230502',
-          customer: { name: 'Trần Thị Bích', email: 'bich.tran@gmail.com' },
-          total: 450000,
-          status: 'shipping',
-          createdAt: '2023-12-10T13:15:00.000Z'
-        },
-        {
-          _id: 'ORD-20230503',
-          customer: { name: 'Lê Hoàng Cường', email: 'cuong.le@mail.com' },
-          total: 2100000,
-          status: 'completed',
-          createdAt: '2023-11-10T18:45:00.000Z'
-        },
-        {
-          _id: 'ORD-20230504',
-          customer: { name: 'Phạm Minh Đăng', email: 'dang.pham@email.com' },
-          total: 890000,
-          status: 'cancelled',
-          createdAt: '2023-11-10T10:20:00.000Z'
-        }
-      ]
-    };
+    const response = await api.get('/products/categories/all');
+    return response.data;
   }
 };
 
