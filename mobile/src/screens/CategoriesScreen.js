@@ -25,6 +25,7 @@ export default function CategoriesScreen({ navigation, route }) {
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState('-createdAt');
   const [searchText, setSearchText] = useState('');
+  const [showCategories, setShowCategories] = useState(false);
   const scrollViewRef = useRef(null);
 
   const sortOptions = [
@@ -53,16 +54,35 @@ export default function CategoriesScreen({ navigation, route }) {
   const loadCategories = async () => {
     try {
       const response = await productService.getCategories();
-      if (response.success) {
+      
+      // API cũ trả về data trực tiếp, không có wrapper success
+      const categoriesData = response.data || response;
+      
+      if (categoriesData && Array.isArray(categoriesData)) {
         const allCategory = { name: 'Tất cả', slug: 'all', icon: 'apps-outline' };
-        setCategories([allCategory, ...response.data]);
+        setCategories([allCategory, ...categoriesData]);
+      } else {
+        console.error('Categories error: Invalid data format');
+        // Use fallback categories
+        const fallbackCategories = [
+          { name: 'Laptop', slug: 'laptop', icon: 'laptop-outline' },
+          { name: 'Điện thoại', slug: 'phone', icon: 'phone-portrait-outline' },
+          { name: 'Tablet', slug: 'tablet', icon: 'tablet-portrait-outline' },
+          { name: 'Phụ kiện', slug: 'accessory', icon: 'headset-outline' },
+          { name: 'Đồng hồ', slug: 'watch', icon: 'watch-outline' },
+          { name: 'Âm thanh', slug: 'audio', icon: 'musical-notes-outline' },
+          { name: 'Smart Home', slug: 'smart-home', icon: 'home-outline' },
+          { name: 'Gaming', slug: 'gaming', icon: 'game-controller-outline' }
+        ];
+        const allCategory = { name: 'Tất cả', slug: 'all', icon: 'apps-outline' };
+        setCategories([allCategory, ...fallbackCategories]);
       }
     } catch (error) {
       console.error('Error loading categories:', error);
     }
   };
 
-  const loadProducts = async () => {
+const loadProducts = async () => {
     try {
       setLoading(true);
 
@@ -81,8 +101,14 @@ export default function CategoriesScreen({ navigation, route }) {
 
       const response = await productService.getProducts(params);
 
-      if (response.success) {
-        setProducts(response.data);
+      // API cũ trả về data trực tiếp, không có wrapper success
+      const productsData = response.data || response;
+      
+      if (productsData && Array.isArray(productsData)) {
+        setProducts(productsData);
+      } else {
+        console.error('Products error: Invalid data format');
+        setProducts([]);
       }
     } catch (error) {
       console.error('Error loading products:', error);
@@ -102,6 +128,11 @@ export default function CategoriesScreen({ navigation, route }) {
     <TouchableOpacity 
       style={styles.productCard}
       activeOpacity={0.7}
+      onPress={() =>
+        navigation.navigate("ProductDetail", {
+          productId: item._id,
+        })
+      }
     >
       {item.discount > 0 && (
         <View style={styles.discountBadge}>
@@ -158,68 +189,84 @@ export default function CategoriesScreen({ navigation, route }) {
         </View>
       </View>
 
-      {/* Categories */}
-      <ScrollView
-        ref={scrollViewRef}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.categoriesScroll}
-        contentContainerStyle={styles.categoriesContainer}
-      >
-        {categories.map((cat) => (
-          <TouchableOpacity
-            key={cat.slug}
-            style={[
-              styles.categoryTab,
-              selectedCategory === cat.slug && styles.categoryTabActive
-            ]}
-            onPress={() => setSelectedCategory(cat.slug)}
-          >
-            <Ionicons
-              name={cat.icon || 'cube-outline'}
-              size={20}
-              color={selectedCategory === cat.slug ? '#FF6B35' : '#666'}
-            />
-            <Text
-              style={[
-                styles.categoryTabText,
-                selectedCategory === cat.slug && styles.categoryTabTextActive
-              ]}
-              numberOfLines={1}
-            >
-              {cat.name}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-
-      {/* Sort Options */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.sortScroll}
-        contentContainerStyle={styles.sortContainer}
-      >
+      {/* Sort Options - Filter chips */}
+      <View style={styles.filterChipsContainer}>
         {sortOptions.map((option) => (
           <TouchableOpacity
             key={option.value}
             style={[
-              styles.sortButton,
-              sortBy === option.value && styles.sortButtonActive
+              styles.filterChip,
+              sortBy === option.value && styles.filterChipActive
             ]}
             onPress={() => setSortBy(option.value)}
           >
             <Text
               style={[
-                styles.sortButtonText,
-                sortBy === option.value && styles.sortButtonTextActive
+                styles.filterChipText,
+                sortBy === option.value && styles.filterChipTextActive
               ]}
             >
               {option.label}
             </Text>
           </TouchableOpacity>
         ))}
-      </ScrollView>
+      </View>
+
+      {/* Category Dropdown - Bottom row, aligned to right */}
+      <View style={styles.categoriesFilterContainer}>
+        <TouchableOpacity 
+          style={styles.categoryDropdown}
+          onPress={() => setShowCategories(!showCategories)}
+        >
+          <View style={styles.categoryDropdownContent}>
+            <Ionicons 
+              name={categories.find(cat => cat.slug === selectedCategory)?.icon || 'cube-outline'} 
+              size={18} 
+              color="#FF6B35" 
+            />
+            <Text style={styles.categoryDropdownText}>
+              {categories.find(cat => cat.slug === selectedCategory)?.name || 'Tất cả'}
+            </Text>
+            <Ionicons 
+              name={showCategories ? "chevron-up" : "chevron-down"} 
+              size={18} 
+              color="#666" 
+            />
+          </View>
+        </TouchableOpacity>
+        
+        {showCategories && (
+          <View style={styles.categoryDropdownList}>
+            {categories.map((cat) => (
+              <TouchableOpacity
+                key={cat.slug}
+                style={[
+                  styles.categoryDropdownItem,
+                  selectedCategory === cat.slug && styles.categoryDropdownItemActive
+                ]}
+                onPress={() => {
+                  setSelectedCategory(cat.slug);
+                  setShowCategories(false);
+                }}
+              >
+                <Ionicons
+                  name={cat.icon || 'cube-outline'}
+                  size={18}
+                  color={selectedCategory === cat.slug ? '#FF6B35' : '#666'}
+                />
+                <Text
+                  style={[
+                    styles.categoryDropdownItemText,
+                    selectedCategory === cat.slug && styles.categoryDropdownItemTextActive
+                  ]}
+                >
+                  {cat.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+      </View>
 
       {/* Products */}
       {loading ? (
@@ -228,22 +275,24 @@ export default function CategoriesScreen({ navigation, route }) {
           <Text style={styles.loadingText}>Đang tải sản phẩm...</Text>
         </View>
       ) : (
-        <FlatList
-          data={products}
-          renderItem={renderProductItem}
-          keyExtractor={(item) => item._id}
-          numColumns={2}
-          contentContainerStyle={styles.productsList}
-          columnWrapperStyle={styles.row}
-          showsVerticalScrollIndicator={false}
-          ListEmptyComponent={() => (
-            <View style={styles.emptyContainer}>
-              <Ionicons name="cube-outline" size={64} color="#CCC" />
-              <Text style={styles.emptyText}>Không tìm thấy sản phẩm nào</Text>
-              <Text style={styles.emptySubtext}>Thử tìm kiếm với từ khóa khác</Text>
-            </View>
-          )}
-        />
+        <View style={styles.productsContainer}>
+          <FlatList
+            data={products}
+            renderItem={renderProductItem}
+            keyExtractor={(item) => item._id}
+            numColumns={2}
+            contentContainerStyle={styles.productsList}
+            columnWrapperStyle={styles.row}
+            showsVerticalScrollIndicator={false}
+            ListEmptyComponent={() => (
+              <View style={styles.emptyContainer}>
+                <Ionicons name="cube-outline" size={64} color="#CCC" />
+                <Text style={styles.emptyText}>Không tìm thấy sản phẩm nào</Text>
+                <Text style={styles.emptySubtext}>Thử tìm kiếm với từ khóa khác</Text>
+              </View>
+            )}
+          />
+        </View>
       )}
 
       {/* Bottom Navigation */}
@@ -259,7 +308,10 @@ export default function CategoriesScreen({ navigation, route }) {
           <Ionicons name="grid" size={26} color="#FF6B35" />
           <Text style={[styles.navText, styles.navTextActive]}>Danh mục</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
+        <TouchableOpacity 
+          style={styles.navItem}
+          onPress={() => navigation.navigate('Notifications')}
+        >
           <Ionicons name="notifications-outline" size={26} color="#666" />
           <Text style={styles.navText}>Thông báo</Text>
         </TouchableOpacity>
@@ -319,8 +371,6 @@ const styles = StyleSheet.create({
   },
   categoriesScroll: {
     backgroundColor: '#FFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
     marginBottom: 0
   },
   categoriesContainer: {
@@ -352,42 +402,102 @@ const styles = StyleSheet.create({
     color: '#FF6B35',
     fontWeight: 'bold'
   },
-  sortScroll: {
+  filterChipsContainer: {
     backgroundColor: '#FFF',
     borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0'
-  },
-  sortContainer: {
-    paddingHorizontal: 16,
+    borderBottomColor: '#E0E0E0',
+    flexDirection: 'row',
+    paddingHorizontal: 12,
     paddingVertical: 8,
-    paddingBottom: 10
+    flexWrap: 'wrap'
   },
-  sortButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginRight: 10,
-    borderRadius: 14,
+  filterChip: {
+    backgroundColor: '#F8F8F8',
     borderWidth: 1,
     borderColor: '#E0E0E0',
-    backgroundColor: '#FFF',
-    minHeight: 36,
-    justifyContent: 'center',
-    alignItems: 'center',
-    flexShrink: 0
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginRight: 8,
+    marginBottom: 4
   },
-  sortButtonActive: {
+  filterChipActive: {
     backgroundColor: '#FF6B35',
     borderColor: '#FF6B35'
   },
-  sortButtonText: {
+  filterChipText: {
+    fontSize: 12,
+    color: '#666',
+    fontWeight: '500'
+  },
+  filterChipTextActive: {
+    color: '#FFF',
+    fontWeight: 'bold'
+  },
+  categoryDropdown: {
+    backgroundColor: '#FFF'
+  },
+  categoriesFilterContainer: {
+    backgroundColor: '#FFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+    alignItems: 'flex-end',
+    position: 'relative'
+  },
+  categoryDropdownContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    justifyContent: 'space-between',
+    minWidth: 140
+  },
+  categoryDropdownText: {
+    flex: 1,
     fontSize: 14,
     color: '#333',
     fontWeight: '500',
-    textAlign: 'center'
+    marginLeft: 8
   },
-  sortButtonTextActive: {
-    color: '#FFF',
+  categoryDropdownList: {
+    backgroundColor: '#FFF',
+    borderTopWidth: 1,
+    borderTopColor: '#E0E0E0',
+    maxHeight: 300,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    zIndex: 1000
+  },
+  categoryDropdownItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: '#FFF'
+  },
+  categoryDropdownItemActive: {
+    backgroundColor: '#FFF5F2'
+  },
+  categoryDropdownItemText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#333',
+    marginLeft: 8
+  },
+  categoryDropdownItemTextActive: {
+    color: '#FF6B35',
     fontWeight: 'bold'
+  },
+  productsContainer: {
+    flex: 1,
+    backgroundColor: '#F5F5F5'
   },
   loadingContainer: {
     flex: 1,

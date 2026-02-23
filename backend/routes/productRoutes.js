@@ -164,7 +164,16 @@ router.get("/related", async (req, res) => {
 // Get product by ID
 router.get('/:id', async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id);
+    // Validate ObjectId format
+    const { id } = req.params;
+    if (!id || !id.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid product ID format'
+      });
+    }
+
+    const product = await Product.findById(id);
 
     if (!product) {
       return res.status(404).json({
@@ -186,4 +195,5 @@ router.get('/:id', async (req, res) => {
     });
   }
 });
+
 module.exports = router;

@@ -13,8 +13,10 @@ import {
   ActivityIndicator,
   Alert,
 } from "react-native";
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from "@expo/vector-icons";
 import productService from "../services/productService";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width } = Dimensions.get("window");
 const ITEM_WIDTH = (width - 48) / 2;
@@ -26,36 +28,63 @@ export default function HomeScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
+  const [cartCount, setCartCount] = useState(0);
 
   useEffect(() => {
     loadProducts();
+    loadCartCount();
   }, []);
+
+  // Refresh cart count when screen focuses
+  useFocusEffect(
+    React.useCallback(() => {
+      loadCartCount();
+    }, [])
+  );
+
+  const loadCartCount = async () => {
+    try {
+      const cartData = await AsyncStorage.getItem('cart');
+      const cart = cartData ? JSON.parse(cartData) : [];
+      const totalItems = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
+      setCartCount(totalItems);
+    } catch (error) {
+      console.log('Error loading cart count:', error);
+      setCartCount(0);
+    }
+  };
 
   const loadProducts = async () => {
     try {
       setLoading(true);
       setError(null);
 
+      // Load from API using productService
       const [featuredResponse, hotResponse] = await Promise.all([
         productService.getFeaturedProducts(),
-        productService.getHotProducts(),
+        productService.getHotProducts()
       ]);
 
-      if (featuredResponse.success) {
-        setFeaturedProducts(featuredResponse.data);
+      // API cũ trả về data trực tiếp, không có wrapper success
+      const featuredData = featuredResponse.data || featuredResponse;
+      const hotData = hotResponse.data || hotResponse;
+
+      if (featuredData && Array.isArray(featuredData)) {
+        setFeaturedProducts(featuredData);
+      } else {
+        console.error('Featured products error: Invalid data format');
+        setFeaturedProducts([]);
       }
 
-      if (hotResponse.success) {
-        setHotProducts(hotResponse.data);
+      if (hotData && Array.isArray(hotData)) {
+        setHotProducts(hotData);
+      } else {
+        console.error('Hot products error: Invalid data format');
+        setHotProducts([]);
       }
     } catch (err) {
-      console.error("Error loading products:", err);
-      setError("Không thể tải sản phẩm. Vui lòng thử lại.");
-      Alert.alert(
-        "Lỗi",
-        "Không thể tải sản phẩm. Vui lòng kiểm tra kết nối mạng.",
-        [{ text: "Thử lại", onPress: loadProducts }],
-      );
+      console.error('Error loading products:', err);
+      setError('Không thể tải sản phẩm');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -65,6 +94,52 @@ export default function HomeScreen({ navigation }) {
   const onRefresh = () => {
     setRefreshing(true);
     loadProducts();
+  };
+
+  const handleSearch = async (text) => {
+    setSearchText(text);
+    
+    if (text.trim().length === 0) {
+      // If search is empty, reload all products
+      loadProducts();
+      return;
+    }
+
+    if (text.trim().length < 2) {
+      return; // Don't search for very short queries
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Search products using productService
+      const searchResults = await productService.searchProducts(text.trim());
+      
+      // Update both featured and hot products with search results
+      const searchData = searchResults.data || searchResults;
+      
+      if (searchData && Array.isArray(searchData)) {
+        setFeaturedProducts(searchData);
+        setHotProducts(searchData);
+      } else {
+        setFeaturedProducts([]);
+        setHotProducts([]);
+      }
+    } catch (err) {
+      console.error('Search error:', err);
+      setError('Không thể tìm kiếm sản phẩm');
+      setFeaturedProducts([]);
+      setHotProducts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onSubmitSearch = () => {
+    if (searchText.trim().length > 0) {
+      handleSearch(searchText);
+    }
   };
 
   const formatPrice = (price) => {
@@ -176,7 +251,10 @@ export default function HomeScreen({ navigation }) {
             placeholder="Tìm kiếm sản phẩm..."
             placeholderTextColor="#999"
             value={searchText}
-            onChangeText={setSearchText}
+            onChangeText={handleSearch}
+            onSubmitEditing={onSubmitSearch}
+            returnKeyType="search"
+            clearButtonMode="while-editing"
           />
         </View>
         <TouchableOpacity
@@ -184,9 +262,11 @@ export default function HomeScreen({ navigation }) {
           onPress={() => navigation.navigate("Cart")}
         >
           <Ionicons name="cart-outline" size={28} color="#FFF" />
-          <View style={styles.cartBadge}>
-            <Text style={styles.cartBadgeText}>0</Text>
-          </View>
+          {cartCount > 0 && (
+            <View style={styles.cartBadge}>
+              <Text style={styles.cartBadgeText}>{cartCount > 99 ? '99+' : cartCount}</Text>
+            </View>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -205,7 +285,7 @@ export default function HomeScreen({ navigation }) {
         <View style={styles.bannerContainer}>
           <View style={styles.banner}>
             <View style={styles.bannerContent}>
-              <View>
+              <View style={styles.bannerTextContainer}>
                 <Text style={styles.bannerTitle}>SALE LỚN</Text>
                 <Text style={styles.bannerSubtitle}>Giảm giá lên đến 50%!</Text>
                 <TouchableOpacity
@@ -216,13 +296,6 @@ export default function HomeScreen({ navigation }) {
                   <Ionicons name="arrow-forward" size={16} color="#00A19C" />
                 </TouchableOpacity>
               </View>
-              <Image
-                source={{
-                  uri: "https://cdn.tgdd.vn/2023/10/banner/720-220-720x220-70.png",
-                }}
-                style={styles.bannerImage}
-                resizeMode="contain"
-              />
             </View>
           </View>
         </View>
@@ -262,12 +335,28 @@ export default function HomeScreen({ navigation }) {
         </ScrollView>
 
         {/* Hot Products */}
-        {hotProducts.length > 0 &&
-          renderSection("🔥 SẢN PHẨM HOT", hotProducts, true)}
-
-        {/* Featured Products */}
-        {featuredProducts.length > 0 &&
-          renderSection("⭐ SẢN PHẨM NỔI BẬT", featuredProducts, true)}
+        {searchText.trim().length > 0 && featuredProducts.length === 0 && hotProducts.length === 0 ? (
+          <View style={styles.noResultsContainer}>
+            <Ionicons name="search-outline" size={48} color="#DDD" />
+            <Text style={styles.noResultsText}>Không tìm thấy sản phẩm</Text>
+            <Text style={styles.noResultsSubText}>Thử tìm với từ khóa khác</Text>
+          </View>
+        ) : (
+          <>
+            {searchText.trim().length > 0 && (
+              <View style={styles.searchResultsHeader}>
+                <Text style={styles.searchResultsText}>
+                  Kết quả tìm kiếm: "{searchText}"
+                </Text>
+                <TouchableOpacity onPress={() => { setSearchText(''); loadProducts(); }}>
+                  <Text style={styles.clearSearchText}>Xóa</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+            {renderSection("🔥 SẢN PHẨM HOT", hotProducts, true)}
+            {renderSection("⭐ SẢN PHẨM NỔI BẬT", featuredProducts, true)}
+          </>
+        )}
 
         <View style={styles.bottomSpace} />
       </ScrollView>
@@ -285,7 +374,10 @@ export default function HomeScreen({ navigation }) {
           <Ionicons name="grid-outline" size={26} color="#666" />
           <Text style={styles.navText}>Danh mục</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
+        <TouchableOpacity 
+          style={styles.navItem}
+          onPress={() => navigation.navigate("Notifications")}
+        >
           <Ionicons name="notifications-outline" size={26} color="#666" />
           <Text style={styles.navText}>Thông báo</Text>
         </TouchableOpacity>
@@ -395,10 +487,12 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   bannerContent: {
-    flexDirection: "row",
+    justifyContent: "center",
     alignItems: "center",
-    justifyContent: "space-between",
     padding: 20,
+  },
+  bannerTextContainer: {
+    alignItems: "center",
   },
   bannerTitle: {
     color: "#FFF",
@@ -426,10 +520,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "bold",
     marginRight: 6,
-  },
-  bannerImage: {
-    width: 120,
-    height: 120,
   },
   categoriesScroll: {
     marginTop: 16,
@@ -575,7 +665,42 @@ const styles = StyleSheet.create({
     color: "#999",
   },
   bottomSpace: {
-    height: 100,
+    height: 80,
+  },
+  noResultsContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
+  noResultsText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#666',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  noResultsSubText: {
+    fontSize: 14,
+    color: '#999',
+  },
+  searchResultsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#F5F5F5',
+  },
+  searchResultsText: {
+    fontSize: 14,
+    color: '#666',
+    flex: 1,
+  },
+  clearSearchText: {
+    fontSize: 14,
+    color: '#FF6B35',
+    fontWeight: 'bold',
   },
   bottomNav: {
     flexDirection: "row",
