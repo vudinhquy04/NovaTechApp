@@ -12,6 +12,11 @@ import ChangePasswordScreen from './src/screens/ChangePasswordScreen';
 import CartScreen from './src/screens/CartScreen'; 
 import ProductDetailScreen from "./src/screens/ProductDetailScreen";
 import OrderDetailScreen from "./src/screens/OrderDetailScreen";
+import CheckoutScreen from "./src/screens/CheckoutScreen";
+import NotificationsScreen from "./src/screens/NotificationsScreen";
+import MyOrdersScreen from "./src/screens/MyOrdersScreen";
+import PersonalInfoScreen from "./src/screens/PersonalInfoScreen";
+import ShippingAddressScreen from "./src/screens/ShippingAddressScreen";
 
 const Stack = createStackNavigator();
 
@@ -45,8 +50,13 @@ export default function App() {
         <Stack.Screen name="Categories" component={CategoriesScreen} />
         <Stack.Screen name="ProductDetail" component={ProductDetailScreen} />
         <Stack.Screen name="Cart" component={CartScreen} />
+        <Stack.Screen name="Checkout" component={CheckoutScreen} />
         <Stack.Screen name="OrderDetail" component={OrderDetailScreen} />
+        <Stack.Screen name="Notifications" component={NotificationsScreen} />
         <Stack.Screen name="Profile" component={ProfileScreen} />
+        <Stack.Screen name="PersonalInfo" component={PersonalInfoScreen} />
+        <Stack.Screen name="ShippingAddress" component={ShippingAddressScreen} />
+        <Stack.Screen name="MyOrders" component={MyOrdersScreen} />
         <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
       </Stack.Navigator>
     </NavigationContainer>
