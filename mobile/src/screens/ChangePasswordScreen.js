@@ -105,7 +105,7 @@ const ChangePasswordScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#667eea',
+    backgroundColor: '#FF6B35',
   },
   formContainer: {
     padding: 20,
@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 20,
-    color: '#333',
+    color: '#FF6B35',
   },
   input: {
     borderWidth: 1,
@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   button: {
-    backgroundColor: '#667eea',
+    backgroundColor: '#FF6B35',
     padding: 15,
     borderRadius: 8,
     alignItems: 'center',
