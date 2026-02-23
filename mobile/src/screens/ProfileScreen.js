@@ -12,10 +12,47 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function ProfileScreen({ navigation }) {
   const [user, setUser] = useState(null);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [orderCount, setOrderCount] = useState(0);
 
   useEffect(() => {
     loadUserInfo();
+    loadUnreadCount();
+    loadOrderCount();
   }, []);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      loadUnreadCount();
+      loadOrderCount();
+    });
+    return unsubscribe;
+  }, [navigation]);
+
+  const loadUnreadCount = async () => {
+    try {
+      const data = await AsyncStorage.getItem('notifications');
+      if (data) {
+        const notifications = JSON.parse(data);
+        const unread = notifications.filter(n => !n.read).length;
+        setUnreadCount(unread);
+      }
+    } catch (error) {
+      console.error('Error loading unread count:', error);
+    }
+  };
+
+  const loadOrderCount = async () => {
+    try {
+      const data = await AsyncStorage.getItem('orders');
+      if (data) {
+        const orders = JSON.parse(data);
+        setOrderCount(orders.length);
+      }
+    } catch (error) {
+      console.error('Error loading order count:', error);
+    }
+  };
 
   const loadUserInfo = async () => {
     try {
@@ -47,16 +84,6 @@ export default function ProfileScreen({ navigation }) {
     );
   };
 
-  const menuItems = [
-    { icon: 'person-outline', title: 'Thông tin cá nhân', screen: null },
-    { icon: 'receipt-outline', title: 'Đơn hàng của tôi', screen: null },
-    { icon: 'heart-outline', title: 'Sản phẩm yêu thích', screen: null },
-    { icon: 'location-outline', title: 'Địa chỉ giao hàng', screen: null },
-    { icon: 'lock-closed-outline', title: 'Đổi mật khẩu', screen: 'ChangePassword' },
-    { icon: 'settings-outline', title: 'Cài đặt', screen: null },
-    { icon: 'help-circle-outline', title: 'Hỗ trợ', screen: null }
-  ];
-
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -86,39 +113,64 @@ export default function ProfileScreen({ navigation }) {
         {/* Stats */}
         <View style={styles.statsContainer}>
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>0</Text>
+            <Text style={styles.statValue}>{orderCount}</Text>
             <Text style={styles.statLabel}>Đơn hàng</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>0</Text>
-            <Text style={styles.statLabel}>Yêu thích</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>0</Text>
-            <Text style={styles.statLabel}>Voucher</Text>
           </View>
         </View>
 
         {/* Menu Items */}
         <View style={styles.menuContainer}>
-          {menuItems.map((item, index) => (
-            <TouchableOpacity
-              key={index}
-              style={styles.menuItem}
-              onPress={() => item.screen && navigation.navigate(item.screen)}
-              disabled={!item.screen}
-            >
-              <View style={styles.menuItemLeft}>
-                <View style={styles.menuIcon}>
-                  <Ionicons name={item.icon} size={22} color="#FF6B35" />
-                </View>
-                <Text style={styles.menuItemText}>{item.title}</Text>
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => navigation.navigate('PersonalInfo')}
+          >
+            <View style={styles.menuItemLeft}>
+              <View style={styles.menuIcon}>
+                <Ionicons name="person-outline" size={22} color="#FF6B35" />
               </View>
-              <Ionicons name="chevron-forward" size={20} color="#CCC" />
-            </TouchableOpacity>
-          ))}
+              <Text style={styles.menuItemText}>Thông tin cá nhân</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#CCC" />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => navigation.navigate('ShippingAddress')}
+          >
+            <View style={styles.menuItemLeft}>
+              <View style={styles.menuIcon}>
+                <Ionicons name="location-outline" size={22} color="#FF6B35" />
+              </View>
+              <Text style={styles.menuItemText}>Địa chỉ giao hàng</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#CCC" />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => navigation.navigate('MyOrders')}
+          >
+            <View style={styles.menuItemLeft}>
+              <View style={styles.menuIcon}>
+                <Ionicons name="receipt-outline" size={22} color="#FF6B35" />
+              </View>
+              <Text style={styles.menuItemText}>Đơn hàng của tôi</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#CCC" />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => navigation.navigate('ChangePassword')}
+          >
+            <View style={styles.menuItemLeft}>
+              <View style={styles.menuIcon}>
+                <Ionicons name="lock-closed-outline" size={22} color="#FF6B35" />
+              </View>
+              <Text style={styles.menuItemText}>Đổi mật khẩu</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#CCC" />
+          </TouchableOpacity>
         </View>
 
         {/* Logout Button */}
@@ -146,8 +198,20 @@ export default function ProfileScreen({ navigation }) {
           <Ionicons name="grid-outline" size={26} color="#666" />
           <Text style={styles.navText}>Danh mục</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
-          <Ionicons name="notifications-outline" size={26} color="#666" />
+        <TouchableOpacity 
+          style={styles.navItem}
+          onPress={() => navigation.navigate('Notifications')}
+        >
+          <View>
+            <Ionicons name="notifications-outline" size={26} color="#666" />
+            {unreadCount > 0 && (
+              <View style={styles.notificationBadge}>
+                <Text style={styles.notificationBadgeText}>
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </Text>
+              </View>
+            )}
+          </View>
           <Text style={styles.navText}>Thông báo</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.navItem}>
@@ -350,5 +414,24 @@ const styles = StyleSheet.create({
   navTextActive: {
     color: '#FF6B35',
     fontWeight: 'bold'
-  }
+  },
+  notificationBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -8,
+    backgroundColor: '#FF3B30',
+    borderRadius: 10,
+    minWidth: 18,
+    height: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+    borderWidth: 2,
+    borderColor: '#FFF',
+  },
+  notificationBadgeText: {
+    color: '#FFF',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
 });
