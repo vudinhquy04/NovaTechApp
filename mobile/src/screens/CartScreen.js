@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -8,18 +8,42 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
+  AppState,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 
 const CartScreen = ({ navigation }) => {
   const [cart, setCart] = useState([]);
   const [selectedIds, setSelectedIds] = useState([]);
+  const [appState, setAppState] = useState(AppState.currentState);
 
   useEffect(() => {
     loadCart();
-  }, []);
+    
+    // Listen for app state changes to refresh cart
+    const handleAppStateChange = (nextAppState) => {
+      if (appState.match(/inactive|background/) && nextAppState === 'active') {
+        loadCart(); // Refresh cart when app comes to foreground
+      }
+      setAppState(nextAppState);
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+
+    return () => {
+      subscription?.remove();
+    };
+  }, [appState]);
+
+  // Refresh cart when screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      loadCart();
+    }, [])
+  );
 
   // LOAD CART
   const loadCart = async () => {
@@ -28,6 +52,11 @@ const CartScreen = ({ navigation }) => {
     cartData = cartData.filter(item => item && item.id);
     setCart(cartData);
   };
+
+  // REFRESH CART - Call this when coming from other screens
+  const refreshCart = useCallback(() => {
+    loadCart();
+  }, []);
 
   // TOGGLE CHECKBOX
   const toggleSelect = (id) => {
@@ -201,9 +230,15 @@ const CartScreen = ({ navigation }) => {
 
             <TouchableOpacity
               style={styles.payBtn}
-              onPress={handleCheckout}
+              onPress={() => {
+                if (selectedIds.length === 0) {
+                  Alert.alert('Thông báo', 'Vui lòng chọn sản phẩm để thanh toán');
+                } else {
+                  navigation.navigate('Checkout');
+                }
+              }}
             >
-              <Text style={styles.payText}>Thanh toán →</Text>
+              <Text style={styles.payText}>Thanh toán ({selectedIds.length}) →</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -267,9 +302,9 @@ const styles = StyleSheet.create({
   },
 
   image: {
-    width: 60,
-    height: 60,
-    borderRadius: 10,
+    width: 80,
+    height: 80,
+    borderRadius: 12,
     marginHorizontal: 10,
   },
 

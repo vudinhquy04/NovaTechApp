@@ -18,6 +18,14 @@ import CartScreen from './src/screens/CartScreen';
 import ProductDetailScreen from './src/screens/ProductDetailScreen';
 import OrderDetailScreen from './src/screens/OrderDetailScreen';
 import DetailProduct from './src/screens/DetailProduct';
+import NotificationScreen from './src/screens/NotificationScreen';
+import NotificationDetailScreen from './src/screens/NotificationDetailScreen';
+import AddressScreen from './src/screens/AddressScreen';
+import CheckoutScreen from './src/screens/CheckoutScreen';
+import FavoritesScreen from './src/screens/FavoritesScreen';
+import SupportScreen from './src/screens/SupportScreen';
+import SettingsScreen from './src/screens/SettingsScreen';
+import TrackOrderScreen from './src/screens/TrackOrderScreen';
 
 const Stack = createStackNavigator();
 
@@ -26,8 +34,8 @@ export default function App() {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const token = await AsyncStorage.getItem('token');
-      setInitialRoute(token ? 'Home' : 'Login');
+      // Always start from Login for proper flow
+      setInitialRoute('Login');
     };
     checkAuth();
   }, []);
@@ -60,6 +68,14 @@ export default function App() {
         <Stack.Screen name="OrderHistory" component={OrderHistoryScreen} />
         <Stack.Screen name="ProductReviews" component={ProductReviewsScreen} />
         <Stack.Screen name="WriteReview" component={WriteReviewScreen} />
+        <Stack.Screen name="Notifications" component={NotificationScreen} />
+        <Stack.Screen name="NotificationDetail" component={NotificationDetailScreen} />
+        <Stack.Screen name="Address" component={AddressScreen} />
+        <Stack.Screen name="Checkout" component={CheckoutScreen} />
+        <Stack.Screen name="Favorites" component={FavoritesScreen} />
+        <Stack.Screen name="Support" component={SupportScreen} />
+        <Stack.Screen name="Settings" component={SettingsScreen} />
+        <Stack.Screen name="TrackOrder" component={TrackOrderScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
