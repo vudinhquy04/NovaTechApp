@@ -262,4 +262,34 @@ router.delete('/users/:id', protect, async (req, res) => {
   }
 });
 
+// Create new user (Admin only)
+router.post('/users', protect, async (req, res) => {
+  try {
+    const { email, password, name, role, isActive } = req.body;
+
+    const userExists = await User.findOne({ email });
+    if (userExists) {
+      return res.status(400).json({ message: 'User already exists' });
+    }
+
+    const user = await User.create({
+      email,
+      password,
+      name,
+      role: role || 'staff',
+      isActive: isActive !== undefined ? isActive : true
+    });
+
+    res.status(201).json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      isActive: user.isActive
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 module.exports = router;
