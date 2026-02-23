@@ -74,6 +74,10 @@
   background: #fee2e2;
 }
 
+.stat-card.purple .stat-icon {
+  background: #ede9fe;
+}
+
 .stat-info {
   flex: 1;
 }
@@ -98,4 +102,58 @@
   padding: 48px;
   color: #6b7280;
   font-size: 16px;
+}
+
+/* Dark Mode */
+body.dark-mode .admin-layout {
+  background: #1a1a2e;
+}
+
+body.dark-mode .admin-content {
+  background: #1a1a2e;
+}
+
+body.dark-mode .stats-section h3 {
+  color: #e5e7eb;
+}
+
+body.dark-mode .stat-card {
+  background: #16213e;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+body.dark-mode .stat-card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+
+body.dark-mode .stat-card.blue .stat-icon {
+  background: #1e3a8a;
+}
+
+body.dark-mode .stat-card.green .stat-icon {
+  background: #166534;
+}
+
+body.dark-mode .stat-card.yellow .stat-icon {
+  background: #854d0e;
+}
+
+body.dark-mode .stat-card.red .stat-icon {
+  background: #991b1b;
+}
+
+body.dark-mode .stat-card.purple .stat-icon {
+  background: #6b21a8;
+}
+
+body.dark-mode .stat-label {
+  color: #9ca3af;
+}
+
+body.dark-mode .stat-value {
+  color: #f3f4f6;
+}
+
+body.dark-mode .loading {
+  color: #9ca3af;
 }

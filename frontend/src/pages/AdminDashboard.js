@@ -16,7 +16,10 @@ const AdminDashboard = () => {
     totalOrders: 0,
     pendingOrders: 0,
     completedOrders: 0,
-    cancelledOrders: 0
+    cancelledOrders: 0,
+    totalRevenue: 0,
+    todayRevenue: 0,
+    monthRevenue: 0
   });
   const [loading, setLoading] = useState(true);
 
@@ -36,6 +39,40 @@ const AdminDashboard = () => {
       const orders = ordersRes.orders || [];
       const users = usersRes.users || [];
 
+      console.log('Orders for revenue calculation:', orders);
+
+      // Calculate revenue - sử dụng status 'delivered' và 'shipping' cho đơn đã hoàn thành
+      const completedOrders = orders.filter(o => o.status === 'delivered' || o.status === 'shipping');
+      console.log('Completed orders:', completedOrders);
+      const totalRevenue = completedOrders.reduce((sum, order) => {
+        const amount = order.finalAmount || order.total || 0;
+        console.log('Order revenue:', amount);
+        return sum + amount;
+      }, 0);
+      
+      // Today's revenue
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const todayRevenue = completedOrders
+        .filter(o => {
+          const orderDate = new Date(o.createdAt);
+          orderDate.setHours(0, 0, 0, 0);
+          return orderDate.getTime() === today.getTime();
+        })
+        .reduce((sum, order) => sum + (order.finalAmount || order.total || 0), 0);
+      
+      // This month's revenue
+      const currentMonth = today.getMonth();
+      const currentYear = today.getFullYear();
+      const monthRevenue = completedOrders
+        .filter(o => {
+          const orderDate = new Date(o.createdAt);
+          return orderDate.getMonth() === currentMonth && orderDate.getFullYear() === currentYear;
+        })
+        .reduce((sum, order) => sum + (order.finalAmount || order.total || 0), 0);
+
+      console.log('Revenue stats:', { totalRevenue, todayRevenue, monthRevenue });
+
       setStats({
         totalProducts: products.length,
         activeProducts: products.filter(p => p.stock > 0).length,
@@ -46,8 +83,11 @@ const AdminDashboard = () => {
         inactiveUsers: users.filter(u => !u.isActive).length,
         totalOrders: orders.length,
         pendingOrders: orders.filter(o => o.status === 'pending').length,
-        completedOrders: orders.filter(o => o.status === 'completed').length,
-        cancelledOrders: orders.filter(o => o.status === 'cancelled').length
+        completedOrders: orders.filter(o => o.status === 'delivered').length,
+        cancelledOrders: orders.filter(o => o.status === 'cancelled').length,
+        totalRevenue,
+        todayRevenue,
+        monthRevenue
       });
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -75,7 +115,33 @@ const AdminDashboard = () => {
         <Header title="Thống kê doanh thu" />
         
         <div className="dashboard-container">
-          {/* Product Stats */}
+          <div className="stats-section">
+            <h3>Doanh thu</h3>
+            <div className="stats-grid">
+              <div className="stat-card blue">
+                <div className="stat-icon">💰</div>
+                <div className="stat-info">
+                  <div className="stat-label">TỔNG DOANH THU</div>
+                  <div className="stat-value">{stats.totalRevenue.toLocaleString('vi-VN')} đ</div>
+                </div>
+              </div>
+              <div className="stat-card green">
+                <div className="stat-icon">📅</div>
+                <div className="stat-info">
+                  <div className="stat-label">DOANH THU HÔM NAY</div>
+                  <div className="stat-value">{stats.todayRevenue.toLocaleString('vi-VN')} đ</div>
+                </div>
+              </div>
+              <div className="stat-card purple">
+                <div className="stat-icon">📊</div>
+                <div className="stat-info">
+                  <div className="stat-label">DOANH THU THÁNG NÀY</div>
+                  <div className="stat-value">{stats.monthRevenue.toLocaleString('vi-VN')} đ</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div className="stats-section">
             <h3>Sản phẩm</h3>
             <div className="stats-grid">
@@ -110,7 +176,6 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          {/* User Stats */}
           <div className="stats-section">
             <h3>Người dùng</h3>
             <div className="stats-grid">
@@ -138,7 +203,6 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          {/* Order Stats */}
           <div className="stats-section">
             <h3>Đơn hàng</h3>
             <div className="stats-grid">
