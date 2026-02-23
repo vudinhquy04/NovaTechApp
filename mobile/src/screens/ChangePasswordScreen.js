@@ -41,7 +41,7 @@ const ChangePasswordScreen = ({ navigation }) => {
 
     if (result.success) {
       Alert.alert('Thành công', 'Đổi mật khẩu thành công');
-      navigation.replace('Dashboard');
+      navigation.goBack();
     } else {
       Alert.alert('Lỗi', result.message || 'Đổi mật khẩu thất bại');
     }
@@ -93,7 +93,7 @@ const ChangePasswordScreen = ({ navigation }) => {
 
         <TouchableOpacity
           style={styles.backButton}
-          onPress={() => navigation.navigate('Dashboard')}
+          onPress={() => navigation.goBack()}
         >
           <Text style={styles.backButtonText}>Quay Lại</Text>
         </TouchableOpacity>
