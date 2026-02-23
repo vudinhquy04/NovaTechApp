@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 import { userAPI } from '../services/api';
+import { notifyNewUser } from '../utils/notificationUtils';
 import '../styles/AdminUsers.css';
 
 const AdminUsers = () => {
@@ -9,6 +10,21 @@ const AdminUsers = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [filterRole, setFilterRole] = useState('all');
+  const [showFilterPanel, setShowFilterPanel] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [viewingUser, setViewingUser] = useState(null);
+  const [editingUser, setEditingUser] = useState(null);
+  const previousUserCountRef = useRef(0);
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    phone: '',
+    role: 'staff',
+    isActive: true
+  });
 
   useEffect(() => {
     fetchUsers();
@@ -18,7 +34,20 @@ const AdminUsers = () => {
     try {
       const data = await userAPI.getAll();
       console.log('Users response:', data);
-      setUsers(data.users || []);
+      const fetchedUsers = data.users || [];
+      
+      // Check for new users (excluding admin/staff roles)
+      if (previousUserCountRef.current > 0 && fetchedUsers.length > previousUserCountRef.current) {
+        const latestUser = fetchedUsers[0]; // Assuming users are sorted by date desc
+        
+        if (latestUser && latestUser.role === 'user') {
+          notifyNewUser(latestUser.name || 'Người dùng mới', latestUser.email);
+          window.dispatchEvent(new Event('notificationUpdate'));
+        }
+      }
+      
+      previousUserCountRef.current = fetchedUsers.length;
+      setUsers(fetchedUsers);
     } catch (error) {
       console.error('Error fetching users:', error);
     } finally {
@@ -30,9 +59,86 @@ const AdminUsers = () => {
     if (window.confirm('Bạn có chắc muốn xóa người dùng này?')) {
       try {
         await userAPI.delete(id);
+        alert('Xóa người dùng thành công!');
         fetchUsers();
       } catch (error) {
         alert('Xóa thất bại!');
+      }
+    }
+  };
+
+  const handleAdd = () => {
+    setEditingUser(null);
+    setFormData({
+      name: '',
+      email: '',
+      password: '',
+      phone: '',
+      role: 'staff',
+      isActive: true
+    });
+    setShowModal(true);
+  };
+
+  const handleView = (user) => {
+    setViewingUser(user);
+    setShowViewModal(true);
+  };
+
+  const handleEdit = (user) => {
+    setEditingUser(user);
+    setFormData({
+      name: user.name || '',
+      email: user.email || '',
+      password: '',  // Don't show password
+      phone: user.phone || '',
+      role: user.role || 'staff',
+      isActive: user.isActive !== false
+    });
+    setShowModal(true);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const data = { ...formData };
+      
+      // Don't send password if empty (for edit mode)
+      if (editingUser && !data.password) {
+        delete data.password;
+      }
+
+      if (editingUser) {
+        await userAPI.update(editingUser._id, data);
+        alert('Cập nhật người dùng thành công!');
+      } else {
+        await userAPI.create(data);
+        alert('Thêm người dùng thành công!');
+      }
+      
+      setShowModal(false);
+      fetchUsers();
+    } catch (error) {
+      alert('Có lỗi xảy ra: ' + (error.response?.data?.message || error.message));
+    }
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
+  const handleToggleStatus = async (user) => {
+    if (window.confirm(`Bạn có chắc muốn ${user.isActive ? 'khóa' : 'mở khóa'} tài khoản này?`)) {
+      try {
+        await userAPI.update(user._id, { isActive: !user.isActive });
+        alert('Cập nhật trạng thái thành công!');
+        fetchUsers();
+      } catch (error) {
+        alert('Có lỗi xảy ra!');
       }
     }
   };
@@ -51,12 +157,20 @@ const AdminUsers = () => {
 
   const filteredUsers = users.filter(u => {
     const matchSearch = u.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                        u.email?.toLowerCase().includes(searchTerm.toLowerCase());
+                        u.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        u.phone?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchStatus = filterStatus === 'all' || 
                         (filterStatus === 'active' && u.isActive) ||
                         (filterStatus === 'inactive' && !u.isActive);
-    return matchSearch && matchStatus;
+    const matchRole = filterRole === 'all' || u.role === filterRole;
+    return matchSearch && matchStatus && matchRole;
   });
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setFilterStatus('all');
+    setFilterRole('all');
+  };
 
   const stats = {
     total: users.length,
@@ -111,20 +225,48 @@ const AdminUsers = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
               <div className="table-actions">
-                <select className="filter-select" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
-                  <option value="all">Tất cả vai trò</option>
-                  <option value="active">Hoạt động</option>
-                  <option value="inactive">Đã khóa</option>
-                </select>
-                <select className="filter-select">
-                  <option>Trạng thái</option>
-                  <option>Hoạt động</option>
-                  <option>Đã khóa</option>
-                </select>
-                <button className="btn-refresh">🔄 Làm mới</button>
-                <button className="btn-add">+ Thêm người dùng</button>
+                <button 
+                  className={`btn-filter ${showFilterPanel ? 'active' : ''}`}
+                  onClick={() => setShowFilterPanel(!showFilterPanel)}
+                >
+                  🔽 Bộ lọc
+                  {(filterStatus !== 'all' || filterRole !== 'all') && (
+                    <span className="filter-badge">•</span>
+                  )}
+                </button>
+                <button className="btn-refresh" onClick={fetchUsers}>🔄 Làm mới</button>
+                <button className="btn-add" onClick={handleAdd}>+ Thêm người dùng</button>
               </div>
             </div>
+
+            {/* Filter Panel */}
+            {showFilterPanel && (
+              <div className="filter-panel">
+                <div className="filter-group">
+                  <label>Vai trò</label>
+                  <select value={filterRole} onChange={(e) => setFilterRole(e.target.value)}>
+                    <option value="all">Tất cả vai trò</option>
+                    <option value="admin">Admin</option>
+                    <option value="staff">Staff</option>
+                  </select>
+                </div>
+
+                <div className="filter-group">
+                  <label>Trạng thái</label>
+                  <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
+                    <option value="all">Tất cả</option>
+                    <option value="active">Đang hoạt động</option>
+                    <option value="inactive">Đã khóa</option>
+                  </select>
+                </div>
+
+                <div className="filter-actions">
+                  <button className="btn-clear-filter" onClick={clearFilters}>
+                    ✕ Xóa bộ lọc
+                  </button>
+                </div>
+              </div>
+            )}
 
             {loading ? (
               <div className="loading">Đang tải...</div>
@@ -165,8 +307,12 @@ const AdminUsers = () => {
                       <td>{getStatusBadge(user.isActive !== false)}</td>
                       <td>
                         <div className="action-buttons">
-                          <button className="btn-action edit" title="Sửa">✏️</button>
-                          <button className="btn-action lock" title="Khóa">🔒</button>
+                          <button className="btn-action view" onClick={() => handleView(user)} title="Xem">👁️</button>
+                          <button className="btn-action edit" onClick={() => handleEdit(user)} title="Sửa">✏️</button>
+                          <button className="btn-action lock" onClick={() => handleToggleStatus(user)} title={user.isActive ? 'Khóa' : 'Mở khóa'}>
+                            {user.isActive ? '🔒' : '🔓'}
+                          </button>
+                          <button className="btn-action delete" onClick={() => handleDelete(user._id)} title="Xóa">🗑️</button>
                         </div>
                       </td>
                     </tr>
@@ -188,6 +334,178 @@ const AdminUsers = () => {
             </div>
           </div>
         </div>
+
+        {/* Modal View User */}
+        {showViewModal && viewingUser && (
+          <div className="modal-overlay" onClick={() => setShowViewModal(false)}>
+            <div className="modal-content modal-view" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2>Thông tin người dùng</h2>
+                <button className="modal-close" onClick={() => setShowViewModal(false)}>×</button>
+              </div>
+              
+              <div className="user-detail-view">
+                <div className="user-detail-avatar-section">
+                  <div className="user-detail-avatar">
+                    {viewingUser.name?.charAt(0).toUpperCase()}
+                  </div>
+                  <h3 className="user-detail-name">{viewingUser.name}</h3>
+                  <div className="user-detail-id">ID: {viewingUser._id}</div>
+                  <div className="user-detail-status">
+                    {getStatusBadge(viewingUser.isActive !== false)}
+                  </div>
+                </div>
+                
+                <div className="user-detail-info">
+                  <div className="detail-section">
+                    <h4>Thông tin cơ bản</h4>
+                    <div className="detail-row">
+                      <span className="detail-label">👤 Họ và tên:</span>
+                      <span className="detail-value">{viewingUser.name}</span>
+                    </div>
+                    <div className="detail-row">
+                      <span className="detail-label">📧 Email:</span>
+                      <span className="detail-value">{viewingUser.email}</span>
+                    </div>
+                    <div className="detail-row">
+                      <span className="detail-label">📱 Số điện thoại:</span>
+                      <span className="detail-value">{viewingUser.phone || 'Chưa cập nhật'}</span>
+                    </div>
+                  </div>
+
+                  <div className="detail-section">
+                    <h4>Thông tin hệ thống</h4>
+                    <div className="detail-row">
+                      <span className="detail-label">🎭 Vai trò:</span>
+                      <span className="detail-value">{getRoleBadge(viewingUser.role || 'staff')}</span>
+                    </div>
+                    <div className="detail-row">
+                      <span className="detail-label">🔐 Trạng thái:</span>
+                      <span className="detail-value">
+                        {viewingUser.isActive !== false ? 'Đang hoạt động' : 'Đã bị khóa'}
+                      </span>
+                    </div>
+                    <div className="detail-row">
+                      <span className="detail-label">📅 Ngày tạo:</span>
+                      <span className="detail-value">
+                        {viewingUser.createdAt ? new Date(viewingUser.createdAt).toLocaleDateString('vi-VN') : 'N/A'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="modal-footer">
+                <button className="btn-cancel" onClick={() => setShowViewModal(false)}>
+                  Đóng
+                </button>
+                <button className="btn-save" onClick={() => {
+                  setShowViewModal(false);
+                  handleEdit(viewingUser);
+                }}>
+                  ✏️ Chỉnh sửa
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal Add/Edit User */}
+        {showModal && (
+          <div className="modal-overlay" onClick={() => setShowModal(false)}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2>{editingUser ? 'Sửa thông tin người dùng' : 'Thêm người dùng mới'}</h2>
+                <button className="modal-close" onClick={() => setShowModal(false)}>×</button>
+              </div>
+              
+              <form onSubmit={handleSubmit} className="user-form">
+                <div className="form-group">
+                  <label>Họ và tên *</label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    required
+                    placeholder="Nhập họ và tên"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Email *</label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    required
+                    placeholder="example@novatech.com"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Mật khẩu {!editingUser && '*'}</label>
+                  <input
+                    type="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    required={!editingUser}
+                    placeholder={editingUser ? "Để trống nếu không đổi" : "Nhập mật khẩu"}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Số điện thoại</label>
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    placeholder="0123456789"
+                  />
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Vai trò *</label>
+                    <select
+                      name="role"
+                      value={formData.role}
+                      onChange={handleInputChange}
+                      required
+                    >
+                      <option value="staff">Staff</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group-checkbox">
+                    <label>
+                      <input
+                        type="checkbox"
+                        name="isActive"
+                        checked={formData.isActive}
+                        onChange={handleInputChange}
+                      />
+                      <span>Tài khoản hoạt động</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="modal-footer">
+                  <button type="button" className="btn-cancel" onClick={() => setShowModal(false)}>
+                    Hủy
+                  </button>
+                  <button type="submit" className="btn-save">
+                    {editingUser ? 'Cập nhật' : 'Thêm mới'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
