@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
 // Protect routes
-exports.protect = async (req, res, next) => {
+const protect = async (req, res, next) => {
   let token;
 
   if (
@@ -34,3 +34,5 @@ exports.protect = async (req, res, next) => {
     return res.status(401).json({ message: 'Not authorized, no token' });
   }
 };
+
+module.exports = protect;

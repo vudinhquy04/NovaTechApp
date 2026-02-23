@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
-const { protect } = require('../middleware/auth');
+const protect = require('../middleware/auth');
 const { sendResetCodeEmail } = require('../utils/emailService');
 
 // Generate JWT Token
