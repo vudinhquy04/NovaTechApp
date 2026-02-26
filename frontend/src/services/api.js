@@ -8,10 +8,10 @@ export const ADMIN_CREDENTIALS = {
 };
 
 const api = axios.create({
-  baseURL: API_URL,
+  baseURL: "http://localhost:5000/api",
   headers: {
-    'Content-Type': 'application/json'
-  }
+    "Content-Type": "application/json",
+  },
 });
 
 api.interceptors.request.use(
