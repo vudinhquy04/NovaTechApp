@@ -51,8 +51,8 @@ const AdminOrders = () => {
                   onChange={(e) => updateStatus(o._id, e.target.value)}
                 >
                   <option value="pending">Chờ xử lý</option>
-                  <option value="shipping">Đang giao</option>
-                  <option value="done">Hoàn tất</option>
+                  <option value="shipping">Đang giao hàng</option>
+                  <option value="done">Đã hoàn tất</option>
                   <option value="cancel">Hủy</option>
                 </select>
               </td>

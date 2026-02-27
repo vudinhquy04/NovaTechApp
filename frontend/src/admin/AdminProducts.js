@@ -1,73 +1,67 @@
 import React, { useEffect, useState } from "react";
 import api from "../services/api";
 
-const AdminProducts = () => {
-  const [products, setProducts] = useState([]);
-  const [search, setSearch] = useState("");
+const AdminOrders = () => {
+  const [orders, setOrders] = useState([]);
 
   useEffect(() => {
-    fetchProducts();
+    fetchOrders();
   }, []);
 
-  const fetchProducts = async () => {
-    const res = await api.get("/products");
-    setProducts(res.data);
+  const fetchOrders = async () => {
+    const res = await api.get("/orders");
+    setOrders(res.data);
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm("Xóa sản phẩm này?")) {
-      await api.delete(`/products/${id}`);
-      fetchProducts();
-    }
+  const updateStatus = async (id, status) => {
+    await api.put(`/orders/${id}`, { status });
+    fetchOrders();
   };
 
-  const filtered = products.filter(p =>
-    p.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const softDelete = async (id) => {
+    await api.put(`/orders/${id}`, { deleted: true });
+    fetchOrders();
+  };
 
   return (
     <div className="container-fluid">
-      <div className="d-flex justify-content-between mb-3">
-        <h4>Quản lý sản phẩm</h4>
-        <button className="btn btn-primary">+ Thêm mới</button>
-      </div>
+      <h4 className="mb-3">Quản lý đơn hàng</h4>
 
-      <input
-        className="form-control mb-3"
-        placeholder="Tìm kiếm sản phẩm..."
-        onChange={(e) => setSearch(e.target.value)}
-      />
-
-      <table className="table table-hover bg-white shadow-sm">
+      <table className="table table-bordered bg-white shadow-sm">
         <thead>
           <tr>
             <th>#</th>
-            <th>Sản phẩm</th>
-            <th>Giá</th>
-            <th>Tồn kho</th>
+            <th>Khách hàng</th>
+            <th>Tổng tiền</th>
             <th>Trạng thái</th>
+            <th>Ngày</th>
             <th></th>
           </tr>
         </thead>
         <tbody>
-          {filtered.map((p, index) => (
-            <tr key={p._id}>
+          {orders.map((o, index) => (
+            <tr key={o._id}>
               <td>{index + 1}</td>
-              <td>{p.name}</td>
-              <td>{p.price.toLocaleString()}đ</td>
-              <td>{p.stock}</td>
+              <td>{o.customerName}</td>
+              <td>{o.total.toLocaleString()}đ</td>
               <td>
-                <span className={`badge ${
-                  p.status === "active" ? "bg-success" :
-                  p.status === "out" ? "bg-warning" :
-                  "bg-danger"
-                }`}>
-                  {p.status}
-                </span>
+                <select
+                  className="form-select"
+                  value={o.status}
+                  onChange={(e) => updateStatus(o._id, e.target.value)}
+                >
+                  <option value="pending">Chờ xử lý</option>
+                  <option value="shipping">Đang giao hang</option>
+                  <option value="done">Hoàn tất</option>
+                  <option value="cancel">Hủy</option>
+                </select>
               </td>
+              <td>{new Date(o.createdAt).toLocaleDateString()}</td>
               <td>
-                <button className="btn btn-sm btn-danger"
-                  onClick={() => handleDelete(p._id)}>
+                <button
+                  className="btn btn-sm btn-danger"
+                  onClick={() => softDelete(o._id)}
+                >
                   Xóa
                 </button>
               </td>
@@ -79,4 +73,4 @@ const AdminProducts = () => {
   );
 };
 
-export default AdminProducts;
+export default AdminOrders;
